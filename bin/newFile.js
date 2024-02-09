@@ -1,18 +1,13 @@
-#!/usr/bin/env node
-
-// @ts-check
 import fs from "node:fs/promises";
-import fsSync from "node:fs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { request } from "undici";
 import { ValiError, parse, string, url } from "valibot";
-import { multiselect, select } from "@topcli/prompts";
+import { multiselect } from "@topcli/prompts";
 import { validateResponseFormat } from "./validate-response-format.js";
 import { exitWithError } from "./exit-with-error.js";
 import { readOrCreateOutputFile } from "./read-or-create-output.js";
-
-const TARGET = "./output/service.json";
+import { TARGET } from "./main.js";
 
 (async function main() {
 	const argv = yargs(hideBin(process.argv))
@@ -60,7 +55,7 @@ const TARGET = "./output/service.json";
 			);
 
 			/** ### filter object with selected path & method */
-			/** @type {import("openapi3-ts").oas30.PathObject} */
+			/** @type {import("openapi3-ts/").oas30.PathObject} */
 			const selectedPathsDetail = {};
 			for (const item of selectedPaths) {
 				const [m, path] = item.split("  ");
@@ -75,46 +70,17 @@ const TARGET = "./output/service.json";
 			/** ### parse selected endpoint to get related schema using $ref as reference */
 			const refs = JSON.stringify(selectedPathsDetail).split(`"$ref"`);
 
-			const schemas = new Set([]);
+			/** @type {string[]} */
+			const schemas = [];
 			for (let i = 0; i < refs.length; i++) {
 				if (i === 0) continue;
 				let ref = refs[i].split("}")[0];
 				ref = ref.slice(2, ref.length - 1);
 
-				schemas.add(ref);
+				schemas.push(ref);
 			}
 
-			/** ### extract complete top-level schema value  */
-			/** @type {object} */
-			const schemasDetails = {};
-			for (const sc of schemas) {
-				const schemaName = sc.split("/").slice(1);
-				schemasDetails[schemaName[2]] =
-					body[schemaName[0]][schemaName[1]][schemaName[2]];
-			}
-
-			/** find nested $ref and repeat the same process as above */
-			const nestedRefs = JSON.stringify(schemasDetails).split(`"$ref"`);
-
-			const nestedSchemas = new Set([]);
-			for (let i = 0; i < nestedRefs.length; i++) {
-				if (i === 0) continue;
-				let ref = nestedRefs[i].split("}")[0];
-				ref = ref.slice(2, ref.length - 1);
-
-				nestedSchemas.add(ref);
-			}
-
-			/** ### extract complete schema value  */
-			/** @type {object} */
-			const nestedSchemasDetails = {};
-			for (const sc of nestedSchemas) {
-				const schemaName = sc.split("/").slice(1);
-				nestedSchemasDetails[schemaName[2]] =
-					body[schemaName[0]][schemaName[1]][schemaName[2]];
-			}
-
-			console.log({ schemas, nestedSchemas });
+			console.log("top-level schemas: ", schemas);
 
 			console.log("\n");
 			console.log("Writing to the file...");
@@ -124,20 +90,10 @@ const TARGET = "./output/service.json";
 
 			// TODO: handle case when file already exist
 			if (e) {
-			} else {
-				await fs.writeFile(
-					TARGET,
-					JSON.stringify({
-						...body,
-						paths: selectedPathsDetail,
-						components: {
-							...body.components,
-							schemas: { ...schemasDetails, ...nestedSchemasDetails },
-						},
-					})
-				);
 			}
 
+			// console.log("e", e);
+			await fs.writeFile(TARGET, JSON.stringify({ schemas }));
 			console.log("Completed!");
 		} catch (err) {
 			if (err instanceof ValiError) exitWithError(err.message);
