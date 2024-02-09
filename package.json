@@ -1,15 +1,27 @@
 {
-  "name": "swagrec-node",
-  "version": "1.0.0",
-  "description": "",
-  "main": "bin/main.js",
+  "name": "swagrec",
   "type": "module",
+  "bin": {
+    "oock": "./bin/main.js"
+  },
+  "version": "0.0.1",
+  "description": "CLI tool to help filter your swagger.json based on selected endpoint.",
+  "main": "bin/main.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "/bin",
+    "/dist"
+  ],
+  "keywords": [],
+  "author": "Khoirul Asfian @rulasfia",
+  "license": "MIT",
+  "homepage": "https://github.com/rulasfia/swagrec",
+  "repository": "rulasfia/swagrec",
   "scripts": {
     "dev": "node --watch ./bin/main.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "@topcli/prompts": "^1.8.1",
     "chalk": "^5.3.0",
