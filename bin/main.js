@@ -2,17 +2,14 @@
 
 // @ts-check
 import fs from "node:fs/promises";
-import fsSync from "node:fs";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { request } from "undici";
 import { ValiError, parse, string, url } from "valibot";
-import { multiselect, select } from "@topcli/prompts";
+import { multiselect, question, select } from "@topcli/prompts";
 import { validateResponseFormat } from "./validate-response-format.js";
 import { exitWithError } from "./exit-with-error.js";
 import { readOrCreateOutputFile } from "./read-or-create-output.js";
-
-const TARGET = "./output/service.json";
 
 (async function main() {
 	const argv = yargs(hideBin(process.argv))
@@ -22,6 +19,12 @@ const TARGET = "./output/service.json";
 			alias: "u",
 			type: "string",
 			description: "link to your /swagger.json definition",
+		})
+		.option("output", {
+			alias: "o",
+			type: "string",
+			description: "path to file output relative to this directory",
+			requiresArg: false,
 		})
 		.strict()
 		.parse();
@@ -54,6 +57,22 @@ const TARGET = "./output/service.json";
 					sortPriority.indexOf(b.split("]")[0].slice(1))
 			);
 
+			/** ### ask user where to output the file */
+			let output_location = await question("Enter output file location: ");
+
+			if (!output_location) {
+				exitWithError("Invalid path. Enter valid path");
+			}
+
+			if (output_location[0] !== "." || output_location[1] !== "/") {
+				output_location = `./${output_location}`;
+			}
+
+			if (!output_location.includes(".json")) {
+				output_location = `${output_location}.json`;
+			}
+
+			/** ### ask user to select enpoint they will use */
 			const selectedPaths = await multiselect(
 				"Select endpoint you want to use",
 				{ choices: optionPaths, preSelectedChoices: [] }
@@ -120,13 +139,13 @@ const TARGET = "./output/service.json";
 			console.log("Writing to the file...");
 
 			/** read file if exist, create new if not */
-			const e = await readOrCreateOutputFile(TARGET);
+			const e = await readOrCreateOutputFile(output_location);
 
 			// TODO: handle case when file already exist
 			if (e) {
 			} else {
 				await fs.writeFile(
-					TARGET,
+					output_location,
 					JSON.stringify({
 						...body,
 						paths: selectedPathsDetail,
