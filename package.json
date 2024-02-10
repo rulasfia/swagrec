@@ -4,7 +4,7 @@
   "bin": {
     "oock": "./bin/main.js"
   },
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "CLI tool to help filter your swagger.json based on selected endpoint.",
   "main": "bin/main.js",
   "engines": {
