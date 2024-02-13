@@ -24,7 +24,6 @@
   },
   "dependencies": {
     "@topcli/prompts": "^1.8.1",
-    "chalk": "^5.3.0",
     "undici": "^6.6.2",
     "valibot": "^0.28.1",
     "yargs": "^17.7.2"
