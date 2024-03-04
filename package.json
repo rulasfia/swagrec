@@ -4,7 +4,7 @@
   "bin": {
     "oock": "./bin/main.js"
   },
-  "version": "0.0.3",
+  "version": "0.0.4",
   "description": "CLI tool to help filter your swagger.json based on selected endpoint.",
   "main": "bin/main.js",
   "engines": {
@@ -14,7 +14,10 @@
     "/bin",
     "/dist"
   ],
-  "keywords": [],
+  "keywords": [
+    "swagrec",
+    "swagger"
+  ],
   "author": "Khoirul Asfian @rulasfia",
   "license": "MIT",
   "homepage": "https://github.com/rulasfia/swagrec",
