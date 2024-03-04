@@ -35,6 +35,7 @@ import { multiselect, question } from "@topcli/prompts";
 
 		// TODO: handle if output file already exist
 		if (existing) {
+			console.log(existing);
 		}
 
 		const options = format_endpoint_as_options(reference);
@@ -265,12 +266,13 @@ async function prompt_selected_endpoint(body, options, pre_selected = []) {
 		const method = m.split("]")[0].slice(1).toLowerCase();
 
 		if (path in body.paths && method in body.paths[path]) {
-			selected_paths_detail[path] = {};
+			// check if the path already have data (in case of multiple method)
+			selected_paths_detail[path] = selected_paths_detail[path]
+				? { ...selected_paths_detail[path] }
+				: {};
 			selected_paths_detail[path][method] = body.paths[path][method];
 		}
 	}
-
-	// console.log({ selected_paths,selected_paths_detail });
 
 	return selected_paths_detail;
 }
