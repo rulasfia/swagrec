@@ -1,14 +1,14 @@
 #!/usr/bin/env node
 
-// @ts-check
 import fs from "node:fs/promises";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { request } from "undici";
 import { ValiError, parse, string, url } from "valibot";
-import { multiselect, question, select } from "@topcli/prompts";
+import { multiselect, question } from "@topcli/prompts";
 
 (async function main() {
+	// eslint-disable-next-line no-undef
 	const argv = yargs(hideBin(process.argv))
 		.scriptName("swagrec")
 		.usage("$0 [OPTIONS...]")
@@ -26,121 +26,107 @@ import { multiselect, question, select } from "@topcli/prompts";
 		.strict()
 		.parse();
 
-	/** ### validate url argument */
-	if ("url" in argv && argv.url) {
-		try {
-			const urlArg = parse(string([url()]), argv.url);
+	try {
+		const reference = await parse_provided_swagger_reference(argv);
+		const output_location = await prompt_output_location();
 
-			const res = await request(urlArg);
-			const body = await validateResponseFormat(res);
+		// read file if exist, create new if not
+		const existing = await read_or_create_output_file(output_location);
 
-			/** ### START THE PROMPT */
-			/** @type {string[]} */
-			const optionPaths = [];
-			for (const [key, value] of Object.entries(body.paths)) {
-				/**  ### handle if an endpoint have more than one method */
-				if (value.get) optionPaths.push(`[GET]  ${key}`);
-				if (value.post) optionPaths.push(`[POST]  ${key}`);
-				if (value.put) optionPaths.push(`[PUT]  ${key}`);
-				if (value.patch) optionPaths.push(`[PATCH]  ${key}`);
-				if (value.delete) optionPaths.push(`[DELETE]  ${key}`);
-			}
-
-			/** ### sort paths option based on it's methods */
-			const sortPriority = ["GET", "POST", "PUT", "PATCH", "DELETE"];
-			optionPaths.sort(
-				(a, b) =>
-					sortPriority.indexOf(a.split("]")[0].slice(1)) -
-					sortPriority.indexOf(b.split("]")[0].slice(1))
-			);
-
-			/** ### ask user where to output the file */
-			let output_location = await question("Enter output file location: ");
-
-			if (!output_location) {
-				exitWithError("Invalid path. Enter valid path");
-			}
-
-			if (output_location[0] !== "." || output_location[1] !== "/") {
-				output_location = `./${output_location}`;
-			}
-
-			if (!output_location.includes(".json")) {
-				output_location = `${output_location}.json`;
-			}
-
-			/** read file if exist, create new if not */
-			const existing = await readOrCreateOutputFile(output_location);
-
-			/** ### ask user to select enpoint they will use */
-			const selectedPathsDetail = getSelectedPathsPrompt(body, optionPaths);
-
-			/** ### parse selected endpoint to get related schema using $ref as reference */
-			const schemasDetails = getSelectedPathRef(
-				body,
-				JSON.stringify(selectedPathsDetail)
-			);
-
-			/** find nested $ref and repeat the same process as above */
-			const nestedSchemasDetails = getSelectedPathRef(
-				body,
-				JSON.stringify(schemasDetails)
-			);
-
-			console.log("\n");
-			console.log("Writing to the file...");
-
-			// TODO: handle case when file already exist
-			if (existing) {
-			} else {
-				await fs.writeFile(
-					output_location,
-					JSON.stringify({
-						...body,
-						paths: selectedPathsDetail,
-						components: {
-							...body.components,
-							schemas: { ...schemasDetails, ...nestedSchemasDetails },
-						},
-					})
-				);
-			}
-
-			console.log("Completed!");
-		} catch (err) {
-			if (err instanceof ValiError) exitWithError(err.message);
-			if ("code" in err && err.code === "ENOENT") exitWithError(err.message);
-			else {
-				console.error(err);
-				exitWithError(err);
-			}
+		// TODO: handle if output file already exist
+		if (existing) {
 		}
-	} else {
-		exitWithError("Invalid URL. Try '--help' to learn more.");
+
+		const options = format_endpoint_as_options(reference);
+
+		const selected_paths = await prompt_selected_endpoint(reference, options);
+
+		const schemas = get_refs_details(reference, JSON.stringify(selected_paths));
+		const nested_schemas = get_refs_details(reference, JSON.stringify(schemas));
+
+		console.log("\n");
+		console.log("Writing to the file...");
+
+		await write_to_output_location({
+			reference,
+			output_location,
+			existing,
+			selected_paths,
+			schemas: { ...schemas, ...nested_schemas },
+		});
+
+		console.log("Completed!");
+	} catch (err) {
+		if (err instanceof ValiError) exit_with_error(err.message);
+		if ("code" in err && err.code === "ENOENT") exit_with_error(err.message);
+		else {
+			console.error(err);
+			exit_with_error(err);
+		}
 	}
 })();
 
 /**
  * function to exit the program with optional error message
+ *
  * @param {string} err
- * @param {number} [exitCode]
+ * @param {number} [exit_code]
  * @returns void
  */
-export function exitWithError(err, exitCode) {
+export function exit_with_error(err, exit_code) {
 	if (err) console.error(err);
-	process.exit(exitCode);
+	process.exit(exit_code);
+}
+
+/**
+ * Parse json data from provided swagger reference location
+ *
+ * @param {Record<string, unknown> | Promise<Record<string, unknown>>} argv
+ */
+async function parse_provided_swagger_reference(argv) {
+	// check if provided url is local or remote
+	if ("url" in argv && argv.url && typeof argv.url === "string") {
+		// handle remote path
+		if (argv.url.startsWith("https://") || argv.url.startsWith("http://")) {
+			try {
+				const parsed = await parse_from_remote_url(argv.url);
+				const valid = await validate_response_format(parsed);
+
+				return valid;
+			} catch (e) {
+				exit_with_error(e);
+			}
+		}
+
+		// TODO: handle local path
+		else {
+			exit_with_error("This feature is still in development");
+		}
+	}
+}
+
+/**
+ * Parse data from a remote URL to JS Object.
+ *
+ * @param {string} input_url - the URL to parse data from
+ */
+function parse_from_remote_url(input_url) {
+	const url_arg = parse(string([url()]), input_url);
+
+	return request(url_arg);
 }
 
 /**
  * Validate fetch response from URL provided
+ *
  * @param {import('undici').Dispatcher.ResponseData} res
  * @returns {Promise<import('openapi3-ts').oas30.OpenAPIObject>}
  */
-export async function validateResponseFormat(res) {
+async function validate_response_format(res) {
 	/** exit when request failed */
 	if (res.statusCode < 200 || res.statusCode > 300) {
-		exitWithError(
-			`Invalid Request: Something went wrong, error ${res.statusCode}.`
+		exit_with_error(
+			`Invalid Request: Something went wrong, error ${res.statusCode}.`,
 		);
 	}
 
@@ -149,7 +135,7 @@ export async function validateResponseFormat(res) {
 		"content-type" in res.headers &&
 		!res.headers["content-type"]?.includes("application/json")
 	) {
-		exitWithError("Invalid Format: URL is't returning valid JSON file.");
+		exit_with_error("Invalid Format: URL is't returning valid JSON file.");
 	}
 
 	/**
@@ -159,9 +145,20 @@ export async function validateResponseFormat(res) {
 	 */
 
 	const body = /** @type {object} */ (await res.body.json());
-	if (!body.openapi || !body.info || !body.info.title || !body.info.version) {
-		exitWithError(
-			"Invalid Format: Use valid OpenAPI definition. Go to https://swagger.io/specification/ for reference. "
+	if (
+		(!body.openapi && !body.swagger) ||
+		!body.info ||
+		!body.info.title ||
+		!body.info.version
+	) {
+		console.log(
+			(!body.openapi && !body.swagger) ||
+				!body.info ||
+				!body.info.title ||
+				!body.info.version,
+		);
+		exit_with_error(
+			"Invalid Format: Use valid OpenAPI definition. Go to https://swagger.io/specification/ for reference. ",
 		);
 	}
 
@@ -171,37 +168,120 @@ export async function validateResponseFormat(res) {
 /**
  *
  * @param {import("openapi3-ts/oas30").OpenAPIObject} body
- * @param {string[]} options
  */
-async function getSelectedPathsPrompt(body, options) {
-	/** ### ask user to select enpoint they will use */
-	const selectedPaths = await multiselect("Select endpoint you want to use", {
+function format_endpoint_as_options(body) {
+	/** @type {string[]} */
+	const option_paths = [];
+	for (const [key, value] of Object.entries(body.paths)) {
+		/**  handle if an endpoint have more than one method */
+		if (value.get) option_paths.push(`[GET]  ${key}`);
+		if (value.post) option_paths.push(`[POST]  ${key}`);
+		if (value.put) option_paths.push(`[PUT]  ${key}`);
+		if (value.patch) option_paths.push(`[PATCH]  ${key}`);
+		if (value.delete) option_paths.push(`[DELETE]  ${key}`);
+	}
+
+	/** sort paths option based on it's methods */
+	const sortPriority = ["GET", "POST", "PUT", "PATCH", "DELETE"];
+	option_paths.sort(
+		(a, b) =>
+			sortPriority.indexOf(a.split("]")[0].slice(1)) -
+			sortPriority.indexOf(b.split("]")[0].slice(1)),
+	);
+
+	return option_paths;
+}
+
+async function prompt_output_location() {
+	let output_location = await question("Enter output file location: ");
+
+	if (!output_location) {
+		exit_with_error("Invalid path. Enter valid path");
+	}
+
+	if (output_location[0] !== "." || output_location[1] !== "/") {
+		output_location = `./${output_location}`;
+	}
+
+	if (!output_location.includes(".json")) {
+		output_location = `${output_location}.json`;
+	}
+
+	return output_location;
+}
+
+/**
+ * Check if provided file path exist, if not create new file.
+ * @param {string} path
+ */
+export async function read_or_create_output_file(path) {
+	try {
+		const r = await fs.readFile(path, "utf-8");
+		// TODO: handle if files exist
+		return r;
+	} catch (err) {
+		if ("code" in err && err.code === "ENOENT" && "message" in err) {
+			console.log("File not found, creating a new file...");
+
+			try {
+				const path_arr = path.split("/");
+				console.log({
+					pathArr: path_arr,
+					dir: path_arr.slice(0, path_arr.length - 1).join("/"),
+					fil: path_arr[path_arr.length - 1],
+				});
+
+				await fs.mkdir(path_arr.slice(0, path_arr.length - 1).join("/"), {
+					recursive: true,
+				});
+
+				await fs.writeFile(path, "");
+				console.log("File created successfully.");
+			} catch (err) {
+				exit_with_error(`Error creating file: ${err}`);
+			}
+		} else exit_with_error(`Error reading file: ${err}`);
+	}
+}
+
+/**
+ *
+ * @param {import("openapi3-ts/oas30").OpenAPIObject} body
+ * @param {string[]} options
+ * @param {string[]} pre_selected
+ */
+async function prompt_selected_endpoint(body, options, pre_selected = []) {
+	/** ask user to select enpoint they will use */
+	const selected_paths = await multiselect("Select endpoint you want to use", {
 		choices: options,
-		preSelectedChoices: [],
+		preSelectedChoices: pre_selected,
 	});
 
-	/** ### filter object with selected path & method */
+	/** filter object with selected path & method */
 	/** @type {import("openapi3-ts").oas30.PathObject} */
-	const selectedPathsDetail = {};
-	for (const item of selectedPaths) {
+	const selected_paths_detail = {};
+	for (const item of selected_paths) {
 		const [m, path] = item.split("  ");
 		const method = m.split("]")[0].slice(1).toLowerCase();
 
 		if (path in body.paths && method in body.paths[path]) {
-			selectedPathsDetail[path] = {};
-			selectedPathsDetail[path][method] = body.paths[path][method];
+			selected_paths_detail[path] = {};
+			selected_paths_detail[path][method] = body.paths[path][method];
 		}
 	}
 
-	return selectedPathsDetail;
+	// console.log({ selected_paths,selected_paths_detail });
+
+	return selected_paths_detail;
 }
 
 /**
  *
  * @param {import("openapi3-ts/oas30").OpenAPIObject} body
  * @param {string} stringify
+ * @return {object}
  */
-function getSelectedPathRef(body, stringify) {
+function get_refs_details(body, stringify) {
 	const refs = stringify.split(`"$ref"`);
 
 	const schemas = new Set([]);
@@ -213,48 +293,44 @@ function getSelectedPathRef(body, stringify) {
 		schemas.add(ref);
 	}
 
-	/** ### extract complete top-level schema value  */
+	/** extract complete top-level schema value  */
 	/** @type {object} */
-	const schemasDetails = {};
+	const schemas_details = {};
 	for (const sc of schemas) {
-		const schemaName = sc.split("/").slice(1);
-		schemasDetails[schemaName[2]] =
-			body[schemaName[0]][schemaName[1]][schemaName[2]];
+		const schema_name = sc.split("/").slice(1);
+		schemas_details[schema_name[2]] =
+			body[schema_name[0]][schema_name[1]][schema_name[2]];
 	}
 
-	return schemasDetails;
+	return schemas_details;
 }
 
 /**
- * Check if provided file path exist, if not create new file.
- * @param {string} path
+ *
+ * @param {object} params
+ * @param {import("openapi3-ts/oas30").OpenAPIObject} params.reference
+ * @param {string} params.output_location
+ * @param {string} params.existing
+ * @param {import("openapi3-ts/oas30").PathsObject} params.selected_paths
+ * @param {import("openapi3-ts/oas30").SchemaObject} params.schemas
  */
-export async function readOrCreateOutputFile(path) {
-	try {
-		const r = await fs.readFile(path, "utf-8");
-		// TODO: handle if files exist
-		return r;
-	} catch (err) {
-		if ("code" in err && err.code === "ENOENT" && "message" in err) {
-			console.log("File not found, creating a new file...");
-
-			try {
-				const pathArr = path.split("/");
-				console.log({
-					pathArr,
-					dir: pathArr.slice(0, pathArr.length - 1).join("/"),
-					fil: pathArr[pathArr.length - 1],
-				});
-
-				await fs.mkdir(pathArr.slice(0, pathArr.length - 1).join("/"), {
-					recursive: true,
-				});
-
-				await fs.writeFile(path, "");
-				console.log("File created successfully.");
-			} catch (err) {
-				exitWithError(`Error creating file: ${err}`);
-			}
-		} else exitWithError(`Error reading file: ${err}`);
+async function write_to_output_location({
+	reference,
+	output_location,
+	existing,
+	selected_paths,
+	schemas,
+}) {
+	if (existing) {
+		// TODO: handle if output file already exist
 	}
+
+	await fs.writeFile(
+		output_location,
+		JSON.stringify({
+			...reference,
+			paths: selected_paths,
+			components: { ...reference.components, schemas },
+		}),
+	);
 }
