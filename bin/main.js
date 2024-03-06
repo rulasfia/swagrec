@@ -1,6 +1,8 @@
 #!/usr/bin/env node
+// @ts-check
 
 import fs from "node:fs/promises";
+import process from "node:process";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
 import { request } from "undici";
@@ -8,7 +10,6 @@ import { ValiError, parse, string, url } from "valibot";
 import { multiselect, question } from "@topcli/prompts";
 
 (async function main() {
-	// eslint-disable-next-line no-undef
 	const argv = yargs(hideBin(process.argv))
 		.scriptName("swagrec")
 		.usage("$0 [OPTIONS...]")
@@ -33,16 +34,41 @@ import { multiselect, question } from "@topcli/prompts";
 		// read file if exist, create new if not
 		const existing = await read_or_create_output_file(output_location);
 
-		// TODO: handle if output file already exist
+		// handle if output file already exist
+		let default_selected = [];
 		if (existing) {
-			console.log(existing);
+			const valid = await validate_response_format(existing);
+
+			// makse sure it's using the same swagger definition as a reference
+			if (JSON.stringify(reference.info) !== JSON.stringify(valid.info)) {
+				exit_with_error(
+					"Invalid Path: Output file already exist from different source reference!",
+				);
+			}
+
+			default_selected = format_endpoint_as_options(valid);
 		}
 
 		const options = format_endpoint_as_options(reference);
 
-		const selected_paths = await prompt_selected_endpoint(reference, options);
+		const selected_paths = await prompt_selected_endpoint(
+			reference,
+			options,
+			default_selected,
+		);
 
-		const schemas = get_refs_details(reference, JSON.stringify(selected_paths));
+		// sort selected path (so it's not default_then_newly_added)
+		const sorted_selected_paths = Object.keys(selected_paths)
+			.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()))
+			.reduce((acc, key) => {
+				acc[key] = selected_paths[key];
+				return acc;
+			}, {});
+
+		const schemas = get_refs_details(
+			reference,
+			JSON.stringify(sorted_selected_paths),
+		);
 		const nested_schemas = get_refs_details(reference, JSON.stringify(schemas));
 
 		console.log("\n");
@@ -51,16 +77,17 @@ import { multiselect, question } from "@topcli/prompts";
 		await write_to_output_location({
 			reference,
 			output_location,
-			existing,
-			selected_paths,
+			selected_paths: sorted_selected_paths,
 			schemas: { ...schemas, ...nested_schemas },
 		});
 
+		if (existing) console.log("Output file updated!");
 		console.log("Completed!");
 	} catch (err) {
 		if (err instanceof ValiError) exit_with_error(err.message);
 		if ("code" in err && err.code === "ENOENT") exit_with_error(err.message);
 		else {
+			console.log("Something when wrong!");
 			console.error(err);
 			exit_with_error(err);
 		}
@@ -120,50 +147,62 @@ function parse_from_remote_url(input_url) {
 /**
  * Validate fetch response from URL provided
  *
- * @param {import('undici').Dispatcher.ResponseData} res
+ * @param {import('undici').Dispatcher.ResponseData | string} res
  * @returns {Promise<import('openapi3-ts').oas30.OpenAPIObject>}
  */
 async function validate_response_format(res) {
-	/** exit when request failed */
-	if (res.statusCode < 200 || res.statusCode > 300) {
-		exit_with_error(
-			`Invalid Request: Something went wrong, error ${res.statusCode}.`,
-		);
-	}
-
-	/** check http header to make sure it's json file */
-	if (
-		"content-type" in res.headers &&
-		!res.headers["content-type"]?.includes("application/json")
-	) {
-		exit_with_error("Invalid Format: URL is't returning valid JSON file.");
-	}
-
 	/**
-	 * parse content to make sure it's valid openAPI definition
-	 * by checking if required fields exist
-	 * references: https://swagger.io/specification/
+	 * validate response body & make sure it's valid openAPI definition
+	 * @param {object} body
+	 * @returns object
 	 */
+	function validate_body(body) {
+		/**
+		 * parse content to make sure it's valid openAPI definition
+		 * by checking if required fields exist
+		 * references: https://swagger.io/specification/
+		 */
 
-	const body = /** @type {object} */ (await res.body.json());
-	if (
-		(!body.openapi && !body.swagger) ||
-		!body.info ||
-		!body.info.title ||
-		!body.info.version
-	) {
-		console.log(
+		if (
 			(!body.openapi && !body.swagger) ||
-				!body.info ||
-				!body.info.title ||
-				!body.info.version,
-		);
-		exit_with_error(
-			"Invalid Format: Use valid OpenAPI definition. Go to https://swagger.io/specification/ for reference. ",
-		);
+			!body.info ||
+			!body.info.title ||
+			!body.info.version
+		) {
+			console.log(
+				(!body.openapi && !body.swagger) ||
+					!body.info ||
+					!body.info.title ||
+					!body.info.version,
+			);
+			exit_with_error(
+				"Invalid Format: Use valid OpenAPI definition. Go to https://swagger.io/specification/ for reference. ",
+			);
+		}
+
+		return body;
 	}
 
-	return body;
+	if (typeof res === "string") {
+		return validate_body(JSON.parse(res));
+	} else {
+		/** exit when request failed */
+		if (res.statusCode < 200 || res.statusCode > 300) {
+			exit_with_error(
+				`Invalid Request: Something went wrong, error ${res.statusCode}.`,
+			);
+		}
+
+		/** check http header to make sure it's json file */
+		if (
+			"content-type" in res.headers &&
+			!res.headers["content-type"]?.includes("application/json")
+		) {
+			exit_with_error("Invalid Format: URL is't returning valid JSON file.");
+		}
+
+		return validate_body(/** @type {object} */ (await res.body.json()));
+	}
 }
 
 /**
@@ -173,6 +212,11 @@ async function validate_response_format(res) {
 function format_endpoint_as_options(body) {
 	/** @type {string[]} */
 	const option_paths = [];
+
+	if (!body.paths || (body.paths && Object.keys(body.paths).length < 1)) {
+		return option_paths;
+	}
+
 	for (const [key, value] of Object.entries(body.paths)) {
 		/**  handle if an endpoint have more than one method */
 		if (value.get) option_paths.push(`[GET]  ${key}`);
@@ -312,21 +356,15 @@ function get_refs_details(body, stringify) {
  * @param {object} params
  * @param {import("openapi3-ts/oas30").OpenAPIObject} params.reference
  * @param {string} params.output_location
- * @param {string} params.existing
  * @param {import("openapi3-ts/oas30").PathsObject} params.selected_paths
  * @param {import("openapi3-ts/oas30").SchemaObject} params.schemas
  */
 async function write_to_output_location({
 	reference,
 	output_location,
-	existing,
 	selected_paths,
 	schemas,
 }) {
-	if (existing) {
-		// TODO: handle if output file already exist
-	}
-
 	await fs.writeFile(
 		output_location,
 		JSON.stringify({
