@@ -5,7 +5,6 @@ import fs from "node:fs/promises";
 import process from "node:process";
 import yargs from "yargs";
 import { hideBin } from "yargs/helpers";
-import { request } from "undici";
 import { ValiError, parse, string, url } from "valibot";
 import { multiselect, question } from "@topcli/prompts";
 
@@ -29,7 +28,9 @@ import { multiselect, question } from "@topcli/prompts";
 
 	try {
 		const reference = await parse_provided_swagger_reference(argv);
-		const output_location = await prompt_output_location();
+		const output_location = prompt_output_location(
+			await question("Enter output file location: "),
+		);
 
 		// read file if exist, create new if not
 		const existing = await read_or_create_output_file(output_location);
@@ -141,13 +142,13 @@ async function parse_provided_swagger_reference(argv) {
 function parse_from_remote_url(input_url) {
 	const url_arg = parse(string([url()]), input_url);
 
-	return request(url_arg);
+	return fetch(url_arg, { method: "GET" });
 }
 
 /**
  * Validate fetch response from URL provided
  *
- * @param {import('undici').Dispatcher.ResponseData | string} res
+ * @param {Response | string} res
  * @returns {Promise<import('openapi3-ts').oas30.OpenAPIObject>}
  */
 async function validate_response_format(res) {
@@ -187,21 +188,20 @@ async function validate_response_format(res) {
 		return validate_body(JSON.parse(res));
 	} else {
 		/** exit when request failed */
-		if (res.statusCode < 200 || res.statusCode > 300) {
+		if (res.status < 200 || res.status > 300) {
 			exit_with_error(
-				`Invalid Request: Something went wrong, error ${res.statusCode}.`,
+				`Invalid Request: Something went wrong, error ${res.status}.`,
 			);
 		}
-
 		/** check http header to make sure it's json file */
 		if (
-			"content-type" in res.headers &&
-			!res.headers["content-type"]?.includes("application/json")
+			res.headers.has("Content-Type") &&
+			!res.headers.get("Content-Type")?.includes("application/json")
 		) {
 			exit_with_error("Invalid Format: URL is't returning valid JSON file.");
 		}
 
-		return validate_body(/** @type {object} */ (await res.body.json()));
+		return validate_body(/** @type {object} */ (await res.json()));
 	}
 }
 
@@ -237,9 +237,13 @@ function format_endpoint_as_options(body) {
 	return option_paths;
 }
 
-async function prompt_output_location() {
-	let output_location = await question("Enter output file location: ");
-
+/**
+ * function to format output location as a valid path end with json file from string input
+ *
+ * @param {string} output_location
+ * @returns {string}
+ */
+function prompt_output_location(output_location) {
 	if (!output_location) {
 		exit_with_error("Invalid path. Enter valid path");
 	}
@@ -257,7 +261,9 @@ async function prompt_output_location() {
 
 /**
  * Check if provided file path exist, if not create new file.
+ *
  * @param {string} path
+ * @return {Promise<string>}
  */
 export async function read_or_create_output_file(path) {
 	try {
@@ -374,3 +380,11 @@ async function write_to_output_location({
 		}),
 	);
 }
+
+// only export function that need to be tested
+export {
+	parse_from_remote_url,
+	validate_response_format,
+	format_endpoint_as_options,
+	get_refs_details,
+};
