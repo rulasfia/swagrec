@@ -8,6 +8,7 @@ import { hideBin } from "yargs/helpers";
 import { request } from "undici";
 import { ValiError, parse, string, url } from "valibot";
 import { multiselect, question } from "@topcli/prompts";
+import { parse_from_remote_url } from "./utils.js";
 
 (async function main() {
 	const argv = yargs(hideBin(process.argv))
@@ -117,7 +118,7 @@ async function parse_provided_swagger_reference(argv) {
 		// handle remote path
 		if (argv.url.startsWith("https://") || argv.url.startsWith("http://")) {
 			try {
-				const parsed = await parse_from_remote_url(argv.url);
+				const parsed = await parse_from_remote_url(argv.url, request);
 				const valid = await validate_response_format(parsed);
 
 				return valid;
@@ -133,16 +134,17 @@ async function parse_provided_swagger_reference(argv) {
 	}
 }
 
-/**
- * Parse data from a remote URL to JS Object.
- *
- * @param {string} input_url - the URL to parse data from
- */
-function parse_from_remote_url(input_url) {
-	const url_arg = parse(string([url()]), input_url);
+// /**
+//  * Parse data from a remote URL to JS Object.
+//  *
+//  * @param {string} input_url - the URL to parse data from
+//  * @param {(v:string) => Promise} requestFn - Funtion to make request
+//  */
+// export function parse_from_remote_url(input_url, requestFn) {
+// 	const url_arg = parse(string([url()]), input_url);
 
-	return request(url_arg);
-}
+// 	return requestFn(url_arg);
+// }
 
 /**
  * Validate fetch response from URL provided
