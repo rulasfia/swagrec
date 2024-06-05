@@ -1,6 +1,17 @@
 // import { createSignal } from "solid-js";
 
-import { parse_from_remote_url } from "swagrec/bin/utils";
+import { parse, string, url } from "valibot";
+
+/**
+ * Parse data from a remote URL to JS Object.
+ *
+ * @param {string} input_url - the URL to parse data from
+ */
+export function parse_from_remote_url(input_url: string) {
+  const url_arg = parse(string([url()]), input_url);
+
+  return fetch(url_arg);
+}
 
 function HomePage() {
   async function submitHandler(
@@ -12,9 +23,10 @@ function HomePage() {
   ) {
     e.preventDefault();
     const formData = new FormData(e.currentTarget);
-    const referenceUrl = formData.get("referenceUrl");
+    const referenceUrl = formData.get("referenceUrl")?.toString();
+    if (!referenceUrl) return;
 
-    const parsed = await parse_from_remote_url(referenceUrl, fetch);
+    const parsed = await parse_from_remote_url(referenceUrl);
     console.log(referenceUrl, parsed);
   }
 
