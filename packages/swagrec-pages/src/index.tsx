@@ -8,16 +8,12 @@ import {
 	getEssentialProps,
 	getSelectedPath,
 	getUniqueRefs,
+	validate_body,
 	validate_response_format,
 } from "./utils";
-import { mockResponse } from "./temp";
-import {
-	getCookie,
-	getSignedCookie,
-	setCookie,
-	setSignedCookie,
-} from "hono/cookie";
+import { getCookie, setCookie } from "hono/cookie";
 import { validator } from "hono/validator";
+import { FromURLPage } from "./from-url";
 
 type Bindings = {
 	SWAGREC_KV: KVNamespace;
@@ -28,6 +24,32 @@ const app = new Hono<{ Bindings: Bindings }>();
 app.use(renderer);
 
 app.get("/", async (c) => {
+	try {
+		// generate and restore unique id and store it in cookie
+		let requestId = getCookie(c, "rid");
+
+		if (requestId) {
+			// clear kv if requestId exists
+			await c.env.SWAGREC_KV.delete(requestId);
+		} else {
+			requestId = crypto.randomUUID();
+			setCookie(c, "rid", requestId);
+		}
+
+		return c.render(<HomePage />);
+
+		// handle error
+	} catch (error) {
+		console.log(error);
+		let message = "Something went wrong";
+		if (error instanceof v.ValiError) message = error.message;
+		if (error instanceof Error) message = error.message;
+
+		return c.render(<HomePage error={message} />);
+	}
+});
+
+app.get("/from-url", async (c) => {
 	const referenceUrl = c.req.query("referenceUrl") ?? "";
 
 	try {
@@ -45,9 +67,6 @@ app.get("/", async (c) => {
 		// check if url valid
 		const validUrl = v.parse(v.string([v.url()]), referenceUrl);
 
-		console.log({ referenceUrl, validUrl });
-
-		// TODO: fetch data from url
 		const res = await fetch(validUrl);
 		const referenceContentJSON = await validate_response_format(res);
 		const referenceContent = JSON.stringify(referenceContentJSON, null, 2);
@@ -63,7 +82,7 @@ app.get("/", async (c) => {
 		await c.env.SWAGREC_KV.put(requestId, referenceContent);
 
 		return c.render(
-			<HomePage
+			<FromURLPage
 				defaultReferenceUrl={referenceUrl}
 				referenceContent={referenceContent}
 				endpoints={options}
@@ -72,19 +91,43 @@ app.get("/", async (c) => {
 
 		// handle error
 	} catch (error) {
+		console.log(error);
 		let message = "Something went wrong";
-
 		if (error instanceof v.ValiError) message = error.message;
 		if (error instanceof Error) message = error.message;
 
 		return c.render(
-			<HomePage defaultReferenceUrl={referenceUrl} error={message} />,
+			<FromURLPage defaultReferenceUrl={referenceUrl} error={message} />,
 		);
 	}
 });
 
+app.post("/api/generate-from-json", async (c) => {
+	try {
+		const requestId = getCookie(c, "rid");
+		if (!requestId) {
+			c.status(400);
+			return c.json({ error: "No requestId found" });
+		}
+		console.log(c.req.url, requestId);
+
+		const body = await c.req.json();
+
+		const referenceContentJSON = await validate_body(body);
+		const referenceContent = JSON.stringify(referenceContentJSON, null, 2);
+
+		await c.env.SWAGREC_KV.put(requestId, referenceContent);
+
+		return c.json({ success: true });
+	} catch (error) {
+		console.log(error);
+		c.status(400);
+		return c.json({ error: "Invalid request body" });
+	}
+});
+
 app.post(
-	"/api/generate",
+	"/api/generate-output",
 	// validate request body
 	validator("json", (body, c) => {
 		console.log(JSON.stringify(body));
@@ -111,8 +154,6 @@ app.post(
 			c.status(400);
 			return c.json({ error: "Invalid reference content" });
 		}
-
-		console.log({ referenceContentJSON });
 
 		// pick essential properties from referenceContentJSON
 		const res = getEssentialProps(referenceContentJSON);

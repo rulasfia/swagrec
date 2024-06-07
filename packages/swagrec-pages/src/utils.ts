@@ -13,7 +13,6 @@ export const generateBodySchema = v.object({
 export function getEndpointList(reference: Record<string, string>) {
 	const endpointList: { method: string; path: string }[] = [];
 
-	console.log({ reference: reference.paths });
 	if (!("paths" in reference)) return endpointList;
 
 	for (const [key, value] of Object.entries(reference.paths)) {
@@ -152,16 +151,27 @@ export function getUniqueRefs(reference: object, paths: object) {
 		][keys[3]];
 	});
 
-	// get nested refs from the refsItem
-	const nestedRefsItem = getUniqueRefsItem(JSON.stringify(refs));
+	let i = 0;
+	let nestedRefsItem = new Set<string>();
+	let nestedRefs: Record<string, any> = {};
+	do {
+		i++;
+		console.log({ iteration: i });
+		// get nested refs from the refsItem
+		nestedRefsItem = getUniqueRefsItem(JSON.stringify(refs));
 
-	nestedRefsItem.forEach((item) => {
-		const keys = item.split("/");
+		if (nestedRefsItem.size > 0) {
+			nestedRefsItem.forEach((item) => {
+				const keys = item.split("/");
 
-		refs[keys[3]] = (reference.components as object)[
-			keys[2] as keyof typeof reference.components
-		][keys[3]];
-	});
+				nestedRefs[keys[3]] = (reference.components as object)[
+					keys[2] as keyof typeof reference.components
+				][keys[3]];
+			});
+		}
+	} while (nestedRefsItem.size > 0);
+
+	console.log({ refsItem, nestedRefsItem });
 
 	return refs;
 }

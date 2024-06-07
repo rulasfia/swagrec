@@ -1,117 +1,60 @@
 import { html } from "hono/html";
-import { FC, Fragment } from "hono/jsx";
+import { FC } from "hono/jsx";
 
-type ComponentProps = {
-	defaultReferenceUrl?: string;
-	referenceContent?: string;
-	error?: string;
-	endpoints?: { method: string; path: string }[];
-};
-
-export const HomePage: FC<ComponentProps> = ({
-	defaultReferenceUrl,
-	referenceContent,
-	error,
-	endpoints,
-}: ComponentProps) => {
+export const HomePage: FC = () => {
 	return (
-		<Fragment>
-			<main>
-				<section>
-					<form>
-						<label htmlFor="referenceUrl">Reference URL</label>
+		<>
+			{/* radio select with "url" and "json" as options */}
+			{html`
+				<main class="homepage_container" x-data="{ open: '' }">
+					<p>Select a reference mode:</p>
+					<div class="mode_selector">
 						<div>
 							<input
-								type="text"
-								id="referenceUrl"
-								name="referenceUrl"
-								placeholder="https://example.com"
-								value={defaultReferenceUrl}
+								type="radio"
+								id="fromURL"
+								name="mode"
+								value="url"
+								x-data
+								x-on:change="open = 'url'; console.log($event.target.value)"
 							/>
-							<button type="submit">Submit</button>
+							<label for="fromURL">From URL</label>
 						</div>
-						{defaultReferenceUrl && error ? (
-							<span class="error_msg">{error}</span>
-						) : null}
+						<div>
+							<input
+								type="radio"
+								id="fromJSON"
+								name="mode"
+								value="json"
+								x-data
+								x-on:change="open = 'json'; console.log($event.target.value)"
+							/>
+							<label for="fromJSON">From JSON</label>
+						</div>
+					</div>
+
+					<br />
+					<form x-show="open === 'url'">
+						<label htmlFor="referenceUrl">Reference URL</label>
+						<input
+							type="text"
+							id="referenceUrl"
+							name="referenceUrl"
+							placeholder="https://example.com/swagger/v1/swagger.json"
+						/>
 					</form>
 
-					<br />
-
-					{endpoints?.length && endpoints.length > 0 ? (
-						<>
-							<span>Select Endpoint</span>
-							<div class="endpoint_selector" id="endpoint_selector">
-								{/* endpoint selector as checkbox */}
-								{endpoints?.map((endpoint) => {
-									const key = `endpoint_${endpoint.method}_${endpoint.path}`;
-
-									return (
-										<div>
-											<input
-												type="checkbox"
-												id={key}
-												name={key}
-												value={JSON.stringify(endpoint)}
-											/>
-											<label htmlFor={key}>
-												{`[${endpoint.method.toUpperCase()}] ${endpoint.path}`}
-											</label>
-										</div>
-									);
-								})}
-							</div>
-						</>
-					) : null}
-
-					<br />
-
-					<div class="form_control">
-						<label htmlFor="reference_content">Reference Preview</label>
+					<form x-show="open === 'json'">
+						<label htmlFor="referenceContent">Reference Content</label>
 						<textarea
-							id="reference_content"
-							name="reference_content"
-							rows={19}
-							disabled
-						>
-							{referenceContent}
-						</textarea>
-					</div>
-				</section>
-				<section>
-					<div>
-						<span>Selected Endpoint</span>
-						<ul class="selected_endpoints" id="selected_endpoints"></ul>
-					</div>
-
-					<button
-						class="generate_json_button"
-						id="generate_json_button"
-						disabled
-					>
-						Generate JSON
-					</button>
-
-					<br />
-					<br />
-					<div>
-						<textarea
-							id="result_content"
-							name="result_content"
-							rows={19}
-							disabled
+							type="text"
+							id="referenceContent"
+							name="referenceContent"
 						></textarea>
-					</div>
-					<br />
-					<div>
-						<button id="copy_result_button" disabled>
-							Copy to Clipboard
-						</button>
-						<span id="coppied_status" style={{ display: "none" }}>
-							Copied!
-						</span>
-					</div>
-				</section>
-			</main>
-		</Fragment>
+					</form>
+				</main>
+			`}
+			{/* <script src="/static/home-script.js" type="module"></script> */}
+		</>
 	);
 };

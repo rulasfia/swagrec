@@ -8,8 +8,41 @@ const gen_json_btn_ref = document.getElementById("generate_json_button");
 const result_content_ref = document.getElementById("result_content");
 const copy_result_btn_ref = document.getElementById("copy_result_button");
 const coppied_status_ref = document.getElementById("coppied_status");
+const initial_form_ref = document.getElementById("initial_form");
 
 let result;
+
+if (initial_form_ref)
+	initial_form_ref.addEventListener("submit", async (e) => {
+		e.preventDefault();
+		console.log("submit");
+		// if it's url, redirect as query param
+		const formData = new FormData(e.target);
+		const url = formData.get("referenceUrl");
+
+		if (url) {
+			window.location.href = `/?referenceUrl=${url}`;
+			return;
+		}
+
+		const content = formData.get("referenceContent");
+		if (content) {
+			const validContent = JSON.parse(content);
+			// fetch to generate-from-json
+			const res = await fetch("/api/generate-from-json", {
+				method: "POST",
+				body: JSON.stringify(validContent),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
+
+			if (res.status === 200) {
+				window.location.href = `/?referenceContent=true`;
+				return;
+			}
+		}
+	});
 
 // event that triggers whenever selected endpoints change
 if (endpoint_selector_ref) {
@@ -40,38 +73,40 @@ if (endpoint_selector_ref) {
 
 // on button click, request server to generate JSON
 // based on selected endpoints
-gen_json_btn_ref.addEventListener("click", async () => {
-	// clear result content
-	result_content_ref.innerText = "";
+if (gen_json_btn_ref)
+	gen_json_btn_ref.addEventListener("click", async () => {
+		// clear result content
+		result_content_ref.innerText = "";
 
-	try {
-		const response = await fetch("/api/generate", {
-			method: "POST",
-			body: JSON.stringify({ endpoints: selected_endpoints }),
-			headers: {
-				"Content-Type": "application/json",
-			},
-		});
+		try {
+			const response = await fetch("/api/generate-output", {
+				method: "POST",
+				body: JSON.stringify({ endpoints: selected_endpoints }),
+				headers: {
+					"Content-Type": "application/json",
+				},
+			});
 
-		if (response.status === 200) {
-			const data = await response.json();
-			result = data;
-			result_content_ref.innerHTML = JSON.stringify(data, null, 2);
-			copy_result_btn_ref.disabled = false;
-		} else {
-			console.error("Error generating JSON");
+			if (response.status === 200) {
+				const data = await response.json();
+				result = data;
+				result_content_ref.innerHTML = JSON.stringify(data, null, 2);
+				copy_result_btn_ref.disabled = false;
+			} else {
+				console.error("Error generating JSON");
+			}
+		} catch (error) {
+			console.error("Error generating JSON", error);
 		}
-	} catch (error) {
-		console.error("Error generating JSON", error);
-	}
-});
+	});
 
-copy_result_btn_ref.addEventListener("click", () => {
-	navigator.clipboard.writeText(JSON.stringify(result, null, 2));
+if (copy_result_btn_ref)
+	copy_result_btn_ref.addEventListener("click", () => {
+		navigator.clipboard.writeText(JSON.stringify(result, null, 2));
 
-	coppied_status_ref.style.display = "block";
+		coppied_status_ref.style.display = "block";
 
-	setTimeout(() => {
-		coppied_status_ref.style.display = "none";
-	}, 1000);
-});
+		setTimeout(() => {
+			coppied_status_ref.style.display = "none";
+		}, 1000);
+	});
