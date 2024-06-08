@@ -71,7 +71,7 @@ export default function Index() {
 
 			{searchParams.get("mode") === "json" && (
 				<form
-					className="mt-8 mx-auto max-w-[480px]"
+					className="mt-8 mx-auto max-w-[640px]"
 					onSubmit={(e) => {
 						e.preventDefault();
 
@@ -89,7 +89,7 @@ export default function Index() {
 							name="reference_content"
 							id="reference_content"
 							placeholder="Paste your Swagger JSON here"
-							rows={8}
+							rows={18}
 							className="w-full px-4 py-2 text-sm border font-mono border-neutral-600 bg-neutral-900 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition duration-100 ease-in"
 						/>
 						<div className="flex flex-row justify-end w-full">
