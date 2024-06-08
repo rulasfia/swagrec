@@ -2,6 +2,7 @@ import type { MetaFunction } from "@remix-run/cloudflare";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
+import { useEffect } from "react";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -21,6 +22,12 @@ const modeOptions = [
 export default function Index() {
 	const [searchParams, setSearchParams] = useSearchParams();
 	const navigate = useNavigate();
+
+	// auto redirect to json mode for now
+	useEffect(() => {
+		if (!searchParams.get("mode")) navigate("?mode=json");
+	}, [searchParams, navigate]);
+
 	return (
 		<main className="text-center pt-16 container mx-auto">
 			<p>Select reference mode:</p>
