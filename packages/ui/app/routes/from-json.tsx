@@ -9,6 +9,17 @@ import {
 	getSelectedPath,
 	getUniqueRefs,
 } from "../utils/utils";
+import type { MetaFunction } from "@remix-run/cloudflare";
+
+export const meta: MetaFunction = () => {
+	return [
+		{ title: "Swagreg - From JSON" },
+		{
+			name: "description",
+			content: "Welcome to Swagreg!",
+		},
+	];
+};
 
 export default function FromJSONPage() {
 	const [referenceContent, setReferenceContent] = useState<
@@ -35,8 +46,6 @@ export default function FromJSONPage() {
 			setEndpoints(options);
 		}
 	}, []);
-
-	console.log(selectedEndpoint);
 
 	/** function to handle the checkbox selection of endpoints */
 	function selectEndpointHandler(

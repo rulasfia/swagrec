@@ -69,17 +69,12 @@ export function getUniqueRefs(reference: object, paths: object) {
 	let length = 0;
 	let y = pathsString;
 	do {
-		console.log({ length, y });
 		const x = getRefsFromString(reference.components, y);
 		y = JSON.stringify(x);
 
 		length = Object.keys(x).length;
 		refs = { ...refs, ...x };
-
-		console.log({ length, y });
 	} while (length > 0);
-
-	console.log(refs);
 
 	return refs;
 }

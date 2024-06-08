@@ -5,10 +5,10 @@ import { Input } from "../components/input";
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: "New Remix App" },
+		{ title: "Swagreg" },
 		{
 			name: "description",
-			content: "Welcome to Remix on Cloudflare!",
+			content: "Welcome to Swagreg!",
 		},
 	];
 };
@@ -54,8 +54,8 @@ export default function Index() {
 							placeholder="https://example.com/v2/swagger.json"
 						/>
 						<div className="flex flex-row justify-end w-full">
-							<Button type="submit" className="w-24">
-								Submit
+							<Button disabled type="submit" className="w-24">
+								Submit (coming soon)
 							</Button>
 						</div>
 					</div>

@@ -1,5 +1,5 @@
 {
-  "name": "ui",
+  "name": "@swagrec/ui",
   "private": true,
   "sideEffects": false,
   "type": "module",
