@@ -1,0 +1,39 @@
+{
+  "name": "swagrec",
+  "type": "module",
+  "bin": {
+    "oock": "./bin/main.js"
+  },
+  "version": "0.0.5",
+  "description": "CLI tool to help filter your swagger.json based on selected endpoint.",
+  "main": "bin/main.js",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "files": [
+    "/bin",
+    "/dist"
+  ],
+  "keywords": [
+    "swagrec",
+    "swagger"
+  ],
+  "author": "Khoirul Asfian @rulasfia",
+  "license": "MIT",
+  "homepage": "https://github.com/rulasfia/swagrec",
+  "repository": "rulasfia/swagrec",
+  "scripts": {
+    "dev": "node --watch ./bin/main.js"
+  },
+  "dependencies": {
+    "@topcli/prompts": "^1.8.1",
+    "undici": "^6.6.2",
+    "valibot": "^0.28.1",
+    "yargs": "^17.7.2"
+  },
+  "devDependencies": {
+    "eslint-config-prettier": "^9.1.0",
+    "eslint-plugin-prettier": "^5.1.3",
+    "openapi3-ts": "^4.2.1"
+  }
+}
