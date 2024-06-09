@@ -1,15 +1,32 @@
 {
-  "name": "core",
-  "version": "1.0.0",
+  "name": "@swagger/core",
+  "version": "0.1.0",
   "description": "",
   "main": "index.js",
+  "type": "module",
+  "files": [
+    "/bin",
+    "/dist"
+  ],
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx watch src/index.ts",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": "tsc"
+  },
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "import": "./dist/index.js"
+    }
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "dependencies": {
+    "valibot": "^0.28.1"
+  },
   "devDependencies": {
+    "tsx": "^4.14.1",
     "typescript": "^5.4.5"
   }
 }

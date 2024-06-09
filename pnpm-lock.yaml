@@ -19,7 +19,14 @@ importers:
         version: 2.0.1
 
   packages/core:
+    dependencies:
+      valibot:
+        specifier: ^0.28.1
+        version: 0.28.1
     devDependencies:
+      tsx:
+        specifier: ^4.14.1
+        version: 4.14.1
       typescript:
         specifier: ^5.4.5
         version: 5.4.5
@@ -60,6 +67,9 @@ importers:
       '@remix-run/react':
         specifier: ^2.9.2
         version: 2.9.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5)
+      '@swagger/core':
+        specifier: workspace:*
+        version: link:../core
       isbot:
         specifier: ^5.1.9
         version: 5.1.9
@@ -3879,6 +3889,11 @@ packages:
 
   tslib@2.6.3:
     resolution: {integrity: sha512-xNvxJEOUiWPGhUuUdQgAJPKOOJfGnIyKySOc09XkKsgdUV/3E2zvwZYdejjmRgPCgcym1juLH3226yA7sEFJKQ==}
+
+  tsx@4.14.1:
+    resolution: {integrity: sha512-GU8pPJq8DdxcJDSK6Bc64c2jW8zBK2hb0jzwHZDfjapbwu6AqvFnAElnzZ17Xb9TH5a/j6/sicTCVYF+eO/cmA==}
+    engines: {node: '>=18.0.0'}
+    hasBin: true
 
   turbo-darwin-64@2.0.1:
     resolution: {integrity: sha512-GO391pUmI6c6l/EpUIaXNzwbVDWRvYahm5oLB176dAWRYKYO+Osqs/XBdOM0G3l7ZFdR6nUtRJc8qinJp7qDUQ==}
@@ -8438,6 +8453,13 @@ snapshots:
       strip-bom: 3.0.0
 
   tslib@2.6.3: {}
+
+  tsx@4.14.1:
+    dependencies:
+      esbuild: 0.20.2
+      get-tsconfig: 4.7.5
+    optionalDependencies:
+      fsevents: 2.3.3
 
   turbo-darwin-64@2.0.1:
     optional: true

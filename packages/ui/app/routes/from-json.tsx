@@ -4,12 +4,12 @@ import { Input } from "../components/input";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
 import {
 	EndpointItem,
-	getEndpointList,
 	getEssentialProps,
 	getSelectedPath,
 	getUniqueRefs,
 } from "../utils/utils";
 import type { MetaFunction } from "@remix-run/cloudflare";
+import { getEndpointList } from "@swagger/core";
 
 export const meta: MetaFunction = () => {
 	return [
