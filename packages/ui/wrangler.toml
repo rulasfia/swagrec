@@ -1,7 +1,7 @@
 #:schema node_modules/wrangler/config-schema.json
 name = "swagrec"
 compatibility_date = "2024-06-05"
-pages_build_output_dir = "./build/client"
+pages_build_output_dir = "/packages/ui/build/client"
 
 # Automatically place your workloads in an optimal location to minimize latency.
 # If you are running back-end logic in a Pages Function, running it closer to your back-end infrastructure
