@@ -1,4 +1,3 @@
-import { Textarea } from "../components/textarea";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
@@ -57,7 +56,7 @@ export default function FromJSONPage() {
 	}
 
 	function copyToClipboardHandler() {
-		navigator.clipboard.writeText(JSON.stringify(outputContent) ?? "");
+		navigator.clipboard.writeText(JSON.stringify(outputContent, null, 2) ?? "");
 		setCoppied(true);
 		setTimeout(() => setCoppied(false), 2000);
 	}
@@ -125,14 +124,17 @@ export default function FromJSONPage() {
 					<label htmlFor="reference_content" className="text-sm font-medium">
 						Reference Content
 					</label>
-					<Textarea
+					{/* <Textarea
 						name="reference_content"
 						id="reference_content"
 						className="w-full font-mono text-nowrap overflow-x-auto"
 						rows={17}
 						disabled
 						defaultValue={JSON.stringify(referenceContent, null, 2)}
-					/>
+					/> */}
+					<code className="w-full font-mono text-nowrap overflow-x-auto h-[360px] rounded-md bg-neutral-900 text-sm">
+						<pre>{JSON.stringify(referenceContent, null, 2)}</pre>
+					</code>
 				</div>
 			</section>
 			<section className="flex h-full flex-col gap-y-2 w-full items-start">
@@ -163,14 +165,17 @@ export default function FromJSONPage() {
 							{coppied ? "Copied!" : "Copy to Clipboard"}
 						</button>
 					</div>
-					<Textarea
+					{/* <Textarea
 						name="reference_content"
 						id="reference_content"
 						className="w-full h-full font-mono text-nowrap overflow-x-auto"
 						rows={17}
 						disabled
 						defaultValue={JSON.stringify(outputContent, null, 2)}
-					/>
+					/> */}
+					<code className="w-full font-mono text-nowrap overflow-x-auto h-[360px] rounded-md bg-neutral-900 text-sm">
+						<pre>{JSON.stringify(outputContent, null, 2)}</pre>
+					</code>
 				</div>
 			</section>
 		</main>
