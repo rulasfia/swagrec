@@ -76,8 +76,8 @@ export default function FromJSONPage() {
 		const val = defKeys.getDefinitionKey(output);
 		if (!val) return;
 
-		if (defKeys.getDefinitionKey === "components") {
-			output[val].schemas = refs;
+		if (val === "components") {
+			(output[val] as Record<string, unknown>).schemas = refs;
 		} else {
 			output[val] = refs;
 		}

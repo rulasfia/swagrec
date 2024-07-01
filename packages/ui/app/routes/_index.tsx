@@ -2,7 +2,8 @@ import type { MetaFunction } from "@remix-run/cloudflare";
 import { useNavigate, useSearchParams } from "@remix-run/react";
 import { Button } from "../components/button";
 import { Input } from "../components/input";
-import { useEffect } from "react";
+import { useEffect, useRef, useState } from "react";
+import { exampleContentJSON } from "../utils/example-json";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -20,8 +21,10 @@ const modeOptions = [
 ];
 
 export default function Index() {
+	const jsonRef = useRef<HTMLTextAreaElement>(null);
 	const [searchParams, setSearchParams] = useSearchParams();
 	const navigate = useNavigate();
+	const [errorMessage, setErrorMessage] = useState("");
 
 	// auto redirect to json mode for now
 	useEffect(() => {
@@ -71,28 +74,60 @@ export default function Index() {
 
 			{searchParams.get("mode") === "json" && (
 				<form
+					id="from-json-form"
 					className="mt-8 mx-auto max-w-[640px]"
 					onSubmit={(e) => {
 						e.preventDefault();
+						setErrorMessage("");
 
 						const form = new FormData(e.currentTarget);
+						if (!form.get("reference_content")) {
+							setErrorMessage("Reference content is required!");
+							return;
+						}
+
 						const refContent = JSON.stringify(form.get("reference_content"));
+
 						sessionStorage.setItem("referenceContent", refContent);
 						navigate("/from-json");
 					}}
 				>
-					<div className="flex flex-col gap-y-2 w-full items-start">
-						<label htmlFor="reference_content" className="text-sm font-medium">
-							Reference Content
-						</label>
+					<div className="flex flex-col  gap-y-2 w-full items-start">
+						<div className="flex flex-row gap-x-2 w-full items-center justify-between">
+							<label
+								htmlFor="reference_content"
+								className="text-sm font-medium"
+							>
+								Reference Content (JSON)
+							</label>
+							<button
+								onClick={() => {
+									if (jsonRef.current) {
+										jsonRef.current.value = exampleContentJSON;
+									}
+								}}
+								type="button"
+								className="text-orange-400"
+							>
+								Add Example Content
+							</button>
+						</div>
 						<textarea
+							ref={jsonRef}
 							name="reference_content"
 							id="reference_content"
 							placeholder="Paste your Swagger JSON here"
 							rows={18}
 							className="w-full px-4 py-2 text-sm border font-mono border-neutral-600 bg-neutral-900 rounded-md shadow-sm focus:outline-none focus:ring-1 focus:ring-orange-400 focus:border-orange-400 transition duration-100 ease-in"
 						/>
-						<div className="flex flex-row justify-end w-full">
+						<div className="flex flex-row justify-between w-full">
+							{errorMessage !== "" ? (
+								<div className="flex flex-col px-4 py-2 gap-y-2 w-fit bg-red-100 rounded-md shadow-sm border border-red-600 border-solid font-medium">
+									<p className="text-sm text-red-600">{errorMessage}</p>
+								</div>
+							) : (
+								<span />
+							)}
 							<Button type="submit" className="w-24">
 								Submit
 							</Button>
