@@ -1,14 +1,15 @@
 import { Button } from "../components/button";
 import { Input } from "../components/input";
 import { ChangeEvent, useCallback, useEffect, useState } from "react";
+import type { MetaFunction } from "@remix-run/cloudflare";
 import {
-	EndpointItem,
+	type EndpointItem,
+	defKeys,
+	getEndpointList,
 	getEssentialProps,
 	getSelectedPath,
 	getUniqueRefs,
-} from "../utils/utils";
-import type { MetaFunction } from "@remix-run/cloudflare";
-import { defKeys, getEndpointList } from "@swagger/core";
+} from "@swagger/core";
 
 export const meta: MetaFunction = () => {
 	return [

@@ -32,6 +32,7 @@ export default function Index() {
 		if (!searchParams.get("mode")) navigate("?mode=json");
 	}, [searchParams, navigate]);
 
+	console.log(searchParams.get("mode"));
 	return (
 		<main className="text-center pt-16 container mx-auto">
 			<p>Select reference mode:</p>
@@ -76,7 +77,6 @@ export default function Index() {
 
 			{searchParams.get("mode") === "json" && (
 				<form
-					id="from-json-form"
 					className="mt-8 mx-auto max-w-[640px]"
 					onSubmit={(e) => {
 						e.preventDefault();
@@ -91,6 +91,7 @@ export default function Index() {
 						const refContent = JSON.stringify(form.get("reference_content"));
 
 						sessionStorage.setItem("referenceContent", refContent);
+						console.log("navigate to /from-json");
 						navigate("/from-json");
 					}}
 				>
@@ -103,13 +104,13 @@ export default function Index() {
 								Reference Content (JSON)
 							</label>
 							<button
+								type="button"
+								className="text-orange-400"
 								onClick={() => {
 									if (jsonRef.current) {
 										jsonRef.current.value = exampleContentJSON;
 									}
 								}}
-								type="button"
-								className="text-orange-400"
 							>
 								Add Example Content
 							</button>
@@ -130,6 +131,7 @@ export default function Index() {
 							) : (
 								<span />
 							)}
+
 							<Button type="submit" className="w-24">
 								Submit
 							</Button>
