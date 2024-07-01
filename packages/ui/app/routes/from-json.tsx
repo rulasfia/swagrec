@@ -8,7 +8,7 @@ import {
 	getUniqueRefs,
 } from "../utils/utils";
 import type { MetaFunction } from "@remix-run/cloudflare";
-import { getEndpointList } from "@swagger/core";
+import { defKeys, getEndpointList } from "@swagger/core";
 
 export const meta: MetaFunction = () => {
 	return [
@@ -64,14 +64,23 @@ export default function FromJSONPage() {
 	const generateOutputHandler = useCallback(() => {
 		if (!referenceContent) return;
 
+		console.log({ referenceContent });
 		const output = getEssentialProps(referenceContent);
+		console.log({ output });
 		const paths = getSelectedPath(referenceContent, selectedEndpoint);
 
 		output.paths = paths;
 
 		const refs = getUniqueRefs(referenceContent, paths);
 
-		(output.components as Record<string, unknown>).schemas = refs;
+		const val = defKeys.getDefinitionKey(output);
+		if (!val) return;
+
+		if (defKeys.getDefinitionKey === "components") {
+			output[val].schemas = refs;
+		} else {
+			output[val] = refs;
+		}
 
 		setOutputContent(output);
 	}, [referenceContent, selectedEndpoint]);

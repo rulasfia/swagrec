@@ -13,7 +13,7 @@ export default function Header() {
 					<span className="opacity-90 text-sm">Swagger Regenerator</span>
 				</div>
 				<div className="flex flex-row items-center gap-4">
-					<span>v0.0.1</span>
+					<span>v0.1.1</span>
 					<a
 						href="https://github.com/rulasfia/swagrec"
 						rel="noreferrer"

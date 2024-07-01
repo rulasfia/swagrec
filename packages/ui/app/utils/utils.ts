@@ -1,4 +1,7 @@
+import { defKeys } from "@swagger/core";
+
 export type EndpointItem = { method: string; path: string };
+
 export function getEndpointList(reference: Record<string, string>) {
 	const endpointList: EndpointItem[] = [];
 
@@ -23,7 +26,7 @@ export function getEssentialProps(reference: Record<string, unknown>) {
 			essentialProps[key] = {};
 			continue;
 		}
-		if (key === "components") {
+		if (key === defKeys.components) {
 			if (typeof value === "object" && "schemas" in value!) {
 				essentialProps[key] = {
 					...value,
@@ -33,6 +36,13 @@ export function getEssentialProps(reference: Record<string, unknown>) {
 				essentialProps[key] = {};
 			}
 
+			continue;
+		}
+
+		if (key === defKeys.definitions) {
+			if (typeof value === "object") {
+				essentialProps[key] = {};
+			}
 			continue;
 		}
 
@@ -58,9 +68,10 @@ export function getSelectedPath(reference: object, selected: EndpointItem[]) {
 }
 
 export function getUniqueRefs(reference: object, paths: object) {
-	if (!("components" in reference)) return {};
-	if (!reference.components) return {};
-	if (typeof reference.components !== "object") return {};
+	const components = defKeys.getDefinitionVal(reference);
+	if (!components) {
+		return {};
+	}
 
 	let refs: Record<string, unknown> = {};
 
@@ -69,7 +80,7 @@ export function getUniqueRefs(reference: object, paths: object) {
 	let length = 0;
 	let y = pathsString;
 	do {
-		const x = getRefsFromString(reference.components, y);
+		const x = getRefsFromString(components, y);
 		y = JSON.stringify(x);
 
 		length = Object.keys(x).length;
@@ -87,7 +98,14 @@ function getRefsFromString(referenceComponents: object, inputString: string) {
 	const components = referenceComponents;
 	refsItem.forEach((item) => {
 		const keys = item.split("/");
-		refs[keys[3]] = components[keys[2] as keyof typeof components][keys[3]];
+
+		if (keys.includes(defKeys.components)) {
+			// ["#", "components", "schemas", "Pet"];
+			refs[keys[3]] = components[keys[2] as keyof typeof components][keys[3]];
+		} else {
+			// ["#", "definitions", "Pet"];
+			refs[keys[2]] = components[keys[2] as keyof typeof components];
+		}
 	});
 
 	return refs;
