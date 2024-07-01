@@ -16,8 +16,9 @@ export const meta: MetaFunction = () => {
 };
 
 const modeOptions = [
-	{ label: "From URL", mode: "url" },
 	{ label: "From JSON", mode: "json" },
+	{ label: "From YAML", mode: "yaml" },
+	{ label: "From URL", mode: "url" },
 ];
 
 export default function Index() {
@@ -42,10 +43,11 @@ export default function Index() {
 					<button
 						key={mode}
 						type="button"
+						disabled={mode !== "json"}
 						onClick={() => setSearchParams({ mode })}
-						className={`w-28 text-center py-2 text-sm shadow-sm hover:shadow-md hover:text-neutral-900 rounded-full transition duration-100 ease-in font-medium hover:ring-2 hover:ring-orange-400 ${searchParams.get("mode") === mode ? "bg-orange-100 text-orange-600 hover:text-orange-700" : "bg-white hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900"}`}
+						className={`w-fit px-4 text-center py-2 text-sm shadow-sm hover:shadow-md hover:text-neutral-900 rounded-full transition duration-100 ease-in font-medium hover:ring-2 hover:ring-orange-400 disabled:ring-transparent disabled:text-neutral-600 disabled:bg-neutral-200 disabled:cursor-not-allowed ${searchParams.get("mode") === mode ? "bg-orange-100 text-orange-600 hover:text-orange-700" : "bg-white hover:bg-neutral-200 text-neutral-700 hover:text-neutral-900"}`}
 					>
-						{label}
+						{label + (mode !== "json" ? " (Coming soon)" : "")}
 					</button>
 				))}
 			</div>
