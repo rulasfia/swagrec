@@ -1,5 +1,5 @@
 {
-  "name": "swagrec",
+  "name": "@swagrec/cli",
   "type": "module",
   "bin": {
     "oock": "./bin/main.js"
