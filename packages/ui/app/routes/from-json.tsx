@@ -13,10 +13,10 @@ import {
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: "Swagreg - From JSON" },
+		{ title: "Swagrec - From JSON" },
 		{
 			name: "description",
-			content: "Welcome to Swagreg!",
+			content: "Welcome to Swagrec!",
 		},
 	];
 };

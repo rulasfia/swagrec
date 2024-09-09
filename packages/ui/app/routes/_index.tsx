@@ -7,10 +7,10 @@ import { exampleContentJSON } from "../utils/example-json";
 
 export const meta: MetaFunction = () => {
 	return [
-		{ title: "Swagreg" },
+		{ title: "Swagrec" },
 		{
 			name: "description",
-			content: "Welcome to Swagreg!",
+			content: "Welcome to Swagrec!",
 		},
 	];
 };
