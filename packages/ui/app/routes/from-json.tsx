@@ -9,7 +9,7 @@ import {
 	getEssentialProps,
 	getSelectedPath,
 	getUniqueRefs,
-} from "@swagger/core";
+} from "@swagrec/core";
 
 export const meta: MetaFunction = () => {
 	return [

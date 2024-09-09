@@ -67,7 +67,7 @@ importers:
       '@remix-run/react':
         specifier: ^2.9.2
         version: 2.9.2(react-dom@18.3.1(react@18.3.1))(react@18.3.1)(typescript@5.4.5)
-      '@swagger/core':
+      '@swagrec/core':
         specifier: workspace:*
         version: link:../core
       isbot:
