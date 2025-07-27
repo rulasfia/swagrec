@@ -21,7 +21,7 @@
 		<h2>Generated Definition</h2>
 		<button
 			onclick={copyToClipboard}
-			class="cursor-pointer rounded-sm bg-sky-600 px-3 py-0.5 text-sm text-white shadow-sm hover:bg-sky-600/90"
+			class="cursor-pointer rounded-sm bg-sky-600 px-3 py-0.5 text-sm font-medium text-white shadow-sm hover:bg-sky-600/90"
 			disabled={copied}
 		>
 			{copied ? 'Copied!' : 'Copy'}
@@ -29,7 +29,7 @@
 	</div>
 	<textarea
 		value={result}
-		class="h-[calc(100vh-94px)] w-full rounded-sm border-neutral-300 font-mono text-sm"
+		class="dark: h-[calc(100vh-94px)] w-full rounded-sm border-neutral-300 font-mono text-sm dark:border-neutral-600 dark:bg-neutral-800"
 		disabled
 	></textarea>
 </section>

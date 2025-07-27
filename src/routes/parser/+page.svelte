@@ -39,15 +39,17 @@
 			<button
 				type="submit"
 				onclick={onSubmit}
-				class="cursor-pointer rounded-sm bg-sky-600 px-3 py-0.5 text-sm text-white shadow-sm hover:bg-sky-600/90"
-				>Generate Definition →</button
+				class="cursor-pointer rounded-sm bg-sky-600 px-3 py-0.5 text-sm font-medium text-white shadow-sm hover:bg-sky-600/90"
+				>Generate →</button
 			>
 		</div>
 		<ul
-			class="flex h-[calc(calc(100vh-136px)/2)] flex-col gap-y-1 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm"
+			class="flex h-[calc(calc(100vh-136px)/2)] flex-col gap-y-1 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm dark:border-neutral-600"
 		>
 			{#each Object.entries(paths) as [k] (k)}
-				<li class="flex flex-row items-center gap-x-1 rounded-sm px-1 text-sm hover:bg-sky-100">
+				<li
+					class="flex flex-row items-center gap-x-1 rounded-sm px-1 text-sm hover:bg-sky-100 dark:hover:bg-sky-900/50"
+				>
 					<input
 						type="checkbox"
 						id={k}
@@ -63,7 +65,7 @@
 		</div>
 		<div class="grid h-[calc(calc(100vh-136px)/2)] grid-cols-2 gap-x-2">
 			<ul
-				class="flex flex-col gap-y-1 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm"
+				class="flex flex-col gap-y-1 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm dark:border-neutral-600"
 			>
 				{#each selectedPaths as k (k)}
 					<li class="flex flex-row items-center gap-x-1">
@@ -72,7 +74,7 @@
 				{/each}
 			</ul>
 			<ul
-				class="flex h-full list-outside list-disc flex-col gap-y-0.5 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm"
+				class="flex h-full list-outside list-disc flex-col gap-y-0.5 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm dark:border-neutral-600"
 			>
 				{#each Object.entries(selectedSchemas) as [k] (k)}
 					<li class="flex flex-row items-center gap-x-1">
