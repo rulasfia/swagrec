@@ -45,3 +45,7 @@
 body {
 	@apply bg-white font-mono text-neutral-900 antialiased dark:bg-neutral-900 dark:text-white;
 }
+
+.disclosure {
+	@apply mr-1 text-base;
+}

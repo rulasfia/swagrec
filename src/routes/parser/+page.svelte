@@ -39,22 +39,22 @@
 			<button
 				type="submit"
 				onclick={onSubmit}
-				class="cursor-pointer rounded-sm bg-sky-600 px-3 py-0.5 text-sm font-medium text-white shadow-sm hover:bg-sky-600/90"
+				class="cursor-pointer rounded-sm border border-solid border-sky-600 bg-sky-600 px-3 py-0.5 text-sm font-medium text-white shadow-sm hover:bg-sky-600/90"
 				>Generate →</button
 			>
 		</div>
 		<ul
-			class="flex h-[calc(calc(100vh-136px)/2)] flex-col gap-y-1 overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm dark:border-neutral-600"
+			class="flex h-[calc(calc(100vh-136px)/2)] flex-col overflow-y-scroll rounded-sm border border-solid border-neutral-300 p-2 font-mono text-sm dark:border-neutral-600"
 		>
 			{#each Object.entries(paths) as [k] (k)}
 				<li
-					class="flex flex-row items-center gap-x-1 rounded-sm px-1 text-sm hover:bg-sky-100 dark:hover:bg-sky-900/50"
+					class="flex flex-row items-center gap-x-1 rounded-sm px-1 py-1 text-sm hover:bg-sky-100 dark:hover:bg-sky-900/50"
 				>
 					<input
 						type="checkbox"
 						id={k}
 						onchange={() => (selectedPaths.has(k) ? selectedPaths.delete(k) : selectedPaths.add(k))}
-					/><label for={k}>{k}</label>
+					/><label for={k} class="w-full">{k}</label>
 				</li>
 			{/each}
 		</ul>
