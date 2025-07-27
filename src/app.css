@@ -1,0 +1,7 @@
+@import 'tailwindcss';
+@plugin '@tailwindcss/forms';
+@plugin '@tailwindcss/typography';
+
+body {
+	@apply bg-white text-neutral-900 antialiased dark:bg-neutral-900 dark:text-white;
+}
